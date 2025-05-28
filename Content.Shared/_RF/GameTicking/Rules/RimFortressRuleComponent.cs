@@ -1,6 +1,7 @@
 using Content.Shared.Destructible.Thresholds;
 using Content.Shared.EntityTable.EntitySelectors;
 using Content.Shared.Parallax.Biomes;
+using Content.Shared.Random;
 using Content.Shared.Roles;
 using Robust.Shared.Prototypes;
 
@@ -17,28 +18,6 @@ public sealed partial class RimFortressRuleComponent : Component
     /// </summary>
     [DataField]
     public EntProtoId PlayerProtoId = "RimFortressObserver";
-
-    /// <summary>
-    /// Number of chunks from the center, on which the planet will be loaded.
-    /// Beyond this distance, a border will be created
-    /// </summary>
-    /// <remarks>
-    /// The number of chunks equals: (MaxPlanetChunkDistance * 2 + 1) ^ 2
-    /// </remarks>
-    [DataField]
-    public int PlanetChunkLoadDistance = 6;
-
-    /// <summary>
-    /// The prototype that will be used to create the map border
-    /// </summary>
-    [DataField]
-    public EntProtoId PlanetBorderProtoId = "GhostImpassableWall";
-
-    /// <summary>
-    /// The size of the RimFortress world, determines the number of possible player maps
-    /// </summary>
-    [DataField]
-    public Vector2i WorldSize = new(10, 10);
 
     /// <summary>
     /// Biome template that will be used in the creation of the world
@@ -65,21 +44,23 @@ public sealed partial class RimFortressRuleComponent : Component
     public ComponentRegistry? PopsComponentsOverride = new();
 
     /// <summary>
-    /// The time from the start of the round after which the settlers will fall asleep.
-    /// It is necessary to give time for the map to load and for the spawning to work properly.
-    /// </summary>
-    [DataField]
-    public TimeSpan MinimumTimeUntilFirstEvent = TimeSpan.FromMinutes(20);
-
-    /// <summary>
     /// Table with random events that can happen on the world map
     /// </summary>
-    [DataField(required: true)]
-    public EntityTableSelector WorldEvents = default!;
+    [DataField]
+    public EntityTableSelector? WorldEvents;
 
     /// <summary>
-    /// The minimum and maximum time between rule starts in seconds.
+    /// А list of global world events with chances of starting them
     /// </summary>
     [DataField]
-    public MinMax MinMaxEventTiming = new(3 * 60, 10 * 60);
+    public ProtoId<WeightedRandomPrototype>? GlobalEvents;
+
+    /// <summary>
+    /// Minimum and maximum amount of time in seconds between global world events
+    /// </summary>
+    [DataField]
+    public MinMax MinMaxEventTiming;
+
+    [ViewVariables]
+    public TimeSpan NextEventTime;
 }

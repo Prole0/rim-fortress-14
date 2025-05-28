@@ -1,11 +1,6 @@
-using Content.Server._RF.World;
-using Content.Server.GameTicking.Rules;
-using Content.Server.Parallax;
+using Content.Server._RF.NPC;
 using Content.Shared._RF.GameTicking.Rules;
-using Content.Shared._RF.World;
-using Content.Shared.GameTicking.Components;
-using Robust.Server.GameObjects;
-using Robust.Shared.Map.Components;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
 namespace Content.Server._RF.GameTicking.Rules;
@@ -13,37 +8,32 @@ namespace Content.Server._RF.GameTicking.Rules;
 /// <summary>
 /// Manages <see cref="MigrationRuleComponent"/>
 /// </summary>
-public sealed class MigrationRuleSystem : GameRuleSystem<MigrationRuleComponent>
+public sealed class MigrationRuleSystem : WorldRuleSystem<MigrationRuleComponent>
 {
-    [Dependency] private readonly RimFortressWorldSystem _world = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly RimFortressRuleSystem _rimRule = default!;
-    [Dependency] private readonly BiomeSystem _biome = default!;
-    [Dependency] private readonly MapSystem _map = default!;
+    [Dependency] private readonly IPrototypeManager _prototype = default!;
+    [Dependency] private readonly NpcControlSystem _control = default!;
 
-    protected override void Started(EntityUid uid, MigrationRuleComponent component, GameRuleComponent gameRule, GameRuleStartedEvent args)
+    protected override void Started(EntityUid uid, MigrationRuleComponent component, WorldRuleComponent worldRule, WorldRuleStartedEvent args)
     {
-        base.Started(uid, component, gameRule, args);
+        var amount = component.Amount.Next(Random);
+        var spawn = new List<EntProtoId>();
 
-        if (!_rimRule.TryGetEvent(out var gridUid, out var coords, out var player))
-            return;
-
-        var indicates = _map.TileIndicesFor(gridUid.Value, Comp<MapGridComponent>(gridUid.Value), coords.Value);
-
-        if (component.RequiredBiomes.Count != 0
-            && (!_biome.TryGetBiome(indicates, gridUid.Value, out var biome)
-                || !component.RequiredBiomes.Contains(biome)))
+        for (var i = 0; i < amount; i++)
         {
-            // If the map does not match the requirement, call the event again.
-            // This event will not be called again, because the timer has been updated
-            RaiseLocalEvent(new PlayerAvailableForEvent { Player = player.Value });
-            return;
+            spawn.Add(Random.Pick(component.Spawn));
         }
 
-        var spawn = _random.Pick(component.Spawn);
-        var pops = _world.SpawnPop(coords.Value, spawn, amount: component.Amount.Next(_random));
+        var pops = World.SpawnPop(args.TargetCoordinates, spawn, component.RadiusFromSettlement);
 
         if (component.AddToPops)
-            _world.AddPops((player.Value.Owner, player.Value.Comp), pops);
+            World.AddPops(args.Target, pops);
+
+        if (!_prototype.TryIndex(component.Task, out var task))
+            return;
+
+        foreach (var pop in pops)
+        {
+            _control.TrySetTask(pop, task, args.TargetCoordinates);
+        }
     }
 }

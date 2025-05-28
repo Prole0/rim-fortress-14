@@ -1,11 +1,11 @@
+using Content.Server._RF.NPC;
 using Content.Shared.Destructible.Thresholds;
-using Content.Shared.Parallax.Biomes;
 using Robust.Shared.Prototypes;
 
-namespace Content.Shared._RF.GameTicking.Rules;
+namespace Content.Server._RF.GameTicking.Rules;
 
 /// <summary>
-/// Events of refugee migration to the settlement
+/// Entity migration event to the player's settlement
 /// </summary>
 [RegisterComponent]
 public sealed partial class MigrationRuleComponent : Component
@@ -29,17 +29,17 @@ public sealed partial class MigrationRuleComponent : Component
     public bool AddToPops { get; set; }
 
     /// <summary>
-    /// On maps with only these templates, this event can happen.
-    /// If not set, no check is performed
+    /// Minimum radius from the player's settlements where the event will take place
     /// </summary>
     [DataField]
-    public List<ProtoId<BiomeTemplatePrototype>> RequiredBiomes { get; set; } = new();
+    public int RadiusFromSettlement = 30;
 
     /// <summary>
-    /// Size of the chunk in which entities will spawn.
-    /// Larger the chunk the greater the chance that entities will be far away from each other,
-    /// but smaller chance that the spawn point will be blocked
+    /// NPC task that will be given to entities
     /// </summary>
+    /// <remarks>
+    /// The coordinates of one of the player's settlements will be assigned as the task target
+    /// </remarks>
     [DataField]
-    public int ChunkSize { get; set; } = 3;
+    public ProtoId<NpcTaskPrototype>? Task { get; set; }
 }

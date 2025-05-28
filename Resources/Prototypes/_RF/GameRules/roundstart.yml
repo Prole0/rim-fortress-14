@@ -7,9 +7,6 @@
       defaultPopsJob: Passenger
       worldEvents: !type:NestedSelector
         tableId: BasicWorldRulesTable
-      minMaxEventTiming:
-        min: 600 #10 min
-        max: 1800 #20 min
       dayDuration: 1800 #30 min
       popsComponentsOverride:
         - type: HTN
@@ -17,7 +14,7 @@
             task: RfIdleCompound
         - type: NpcFactionMember
           factions:
-          - RimFortress
+            - RimFortress
         - type: BiomeLoader
         - type: RoutineNpcTasks
           tasks:
