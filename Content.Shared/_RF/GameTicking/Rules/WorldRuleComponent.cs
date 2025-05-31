@@ -1,3 +1,4 @@
+using Content.Shared._RF.Narrator;
 using Content.Shared.Destructible.Thresholds;
 using Content.Shared.Parallax.Biomes;
 using Robust.Shared.Map;
@@ -21,7 +22,7 @@ public sealed partial class WorldRuleComponent : Component
     /// The time that must pass after the player is spawned for the event to be able to happen
     /// </summary>
     [DataField]
-    public TimeSpan StartOffset = TimeSpan.FromMinutes(20);
+    public TimeSpan StartOffset = TimeSpan.FromMinutes(10);
 
     /// <summary>
     /// Biomes in which the event may occur
@@ -36,10 +37,10 @@ public sealed partial class WorldRuleComponent : Component
     public int MinPlayers;
 
     /// <summary>
-    /// Event rarity is -1 to 1, where 1 is a 100% chance of triggering the event
+    /// Cost of the event in points. <seealso cref="NarratorPrototype"/>
     /// </summary>
     [DataField]
-    public float Threshold = -1;
+    public int Cost = 10;
 
     [ViewVariables]
     public EntityUid Target;

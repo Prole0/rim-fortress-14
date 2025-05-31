@@ -1,4 +1,3 @@
-using System.Linq;
 using Content.Server._RF.World;
 using Content.Server.Administration.Logs;
 using Content.Server.Chat.Managers;
@@ -10,7 +9,6 @@ using Content.Shared.Database;
 using Content.Shared.EntityTable;
 using Content.Shared.GameTicking;
 using Content.Shared.GameTicking.Components;
-using Content.Shared.Random.Helpers;
 using JetBrains.Annotations;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
@@ -59,7 +57,6 @@ public sealed partial class RimFortressRuleSystem : GameRuleSystem<RimFortressRu
         base.Added(uid, comp, gameRule, args);
 
         _world.InitializeWorld(comp);
-        comp.NextEventTime = _timing.CurTime + TimeSpan.FromSeconds(comp.MinMaxEventTiming.Next(_random));
     }
 
     private void OnBeforeSpawn(PlayerBeforeSpawnEvent ev)
@@ -77,7 +74,7 @@ public sealed partial class RimFortressRuleSystem : GameRuleSystem<RimFortressRu
         }
     }
 
-    private List<(EntityCoordinates Coords, EntProtoId Proto, WorldRuleComponent Comp)> AvailableRules(Entity<RimFortressPlayerComponent> uid)
+    public List<(EntityCoordinates Coords, EntProtoId Proto, WorldRuleComponent Comp)> AvailableRules(Entity<RimFortressPlayerComponent> uid)
     {
         var available = new List<(EntityCoordinates, EntProtoId, WorldRuleComponent)>();
 
@@ -116,37 +113,9 @@ public sealed partial class RimFortressRuleSystem : GameRuleSystem<RimFortressRu
         return available;
     }
 
-    private (EntityCoordinates Coords, EntProtoId Proto, WorldRuleComponent Comp)? PickRandomRules(
-        Entity<RimFortressPlayerComponent> uid)
-    {
-        var threshold = _random.NextFloat(-1, 1);
-        var rules = AvailableRules(uid)
-            .Where(x => x.Comp.Threshold <= threshold)
-            .ToList();
-
-        if (rules.Count == 0)
-            return null;
-
-        return _random.Pick(rules);
-    }
-
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
-
-        var entities = EntityQueryEnumerator<RimFortressPlayerComponent>();
-        while (entities.MoveNext(out var uid, out var comp))
-        {
-            if (_timing.CurTime < comp.NextEventTime || HasDelayedEvent(new(uid, comp)))
-                continue;
-
-            comp.NextEventTime = _timing.CurTime + comp.EventTimeOffset;
-
-            if (PickRandomRules(new(uid, comp)) is not { } rule)
-                continue;
-
-            StartWorldRule(rule.Proto, uid, rule.Coords);
-        }
 
         var query = EntityQueryEnumerator<DelayedStartRuleComponent, WorldRuleComponent>();
         while (query.MoveNext(out var uid, out var delay, out var rule))
@@ -156,16 +125,16 @@ public sealed partial class RimFortressRuleSystem : GameRuleSystem<RimFortressRu
 
             StartWorldRule(new(uid, rule));
         }
+    }
 
-        var rules = EntityQueryEnumerator<RimFortressRuleComponent>();
-        while (rules.MoveNext(out var comp))
+    public RimFortressRuleComponent GetRule()
+    {
+        while (EntityQueryEnumerator<RimFortressRuleComponent>().MoveNext(out var comp))
         {
-            if (!_prototype.TryIndex(comp.GlobalEvents, out var proto) || comp.NextEventTime < _timing.CurTime)
-                continue;
-
-            comp.NextEventTime = _timing.CurTime + TimeSpan.FromSeconds(comp.MinMaxEventTiming.Next(_random));
-            GameTicker.StartGameRule(proto.Pick(_random));
+            return comp;
         }
+
+        return EntityManager.ComponentFactory.GetComponent<RimFortressRuleComponent>();
     }
 
     public bool IsGameRuleActive(EntityUid ruleEntity, WorldRuleComponent? component = null)

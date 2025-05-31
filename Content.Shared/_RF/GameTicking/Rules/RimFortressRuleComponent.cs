@@ -1,7 +1,6 @@
-using Content.Shared.Destructible.Thresholds;
+using Content.Shared._RF.Narrator;
 using Content.Shared.EntityTable.EntitySelectors;
 using Content.Shared.Parallax.Biomes;
-using Content.Shared.Random;
 using Content.Shared.Roles;
 using Robust.Shared.Prototypes;
 
@@ -50,17 +49,20 @@ public sealed partial class RimFortressRuleComponent : Component
     public EntityTableSelector? WorldEvents;
 
     /// <summary>
-    /// А list of global world events with chances of starting them
+    /// List of global world events that can happen in a round, with their value in points
     /// </summary>
     [DataField]
-    public ProtoId<WeightedRandomPrototype>? GlobalEvents;
+    public Dictionary<EntProtoId, int>? GlobalEvents;
 
     /// <summary>
-    /// Minimum and maximum amount of time in seconds between global world events
+    /// A narrator controlling the events of the world
     /// </summary>
-    [DataField]
-    public MinMax MinMaxEventTiming;
+    [DataField(required: true)]
+    public ProtoId<NarratorPrototype> Narrator;
 
     [ViewVariables]
-    public TimeSpan NextEventTime;
+    public TimeSpan LastEventTime;
+
+    [ViewVariables]
+    public int LastWaitPoints;
 }
